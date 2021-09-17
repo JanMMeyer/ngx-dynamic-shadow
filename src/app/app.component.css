@@ -1,0 +1,30 @@
+
+.bg-wrapper {
+  width: 100%;
+  height: 100%;
+  background-color:#243755;
+}
+
+button {
+  padding: 0.5em 1em;
+  font-size: medium;
+  font-weight: bold;
+  border-radius: 1em;
+  border: 0;
+  background-color: magenta;
+  z-index: 3;
+}
+
+.segment {
+  padding: 15vh 10vw;
+}
+
+div.first > button{
+  margin-left: 0;
+}
+div.second > button {
+  margin-left: 20vw;
+}
+div.third > button {
+  margin-left: 40vw;
+}
