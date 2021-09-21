@@ -5,15 +5,15 @@ import { IPosition } from './dynamicLight/position.interface'
 import { LightSourcesService } from './dynamicLight/lightSource.service'
 
 @Component({
-  selector: 'my-app',
+  selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: [ './app.component.css' ]
+  styleUrls: ['./app.component.css']
 })
-export class AppComponent  {
+export class AppComponent {
   public lightSources$: Observable<IPosition>
-  
+
   constructor(lightSourcesService: LightSourcesService) {
     this.lightSources$ = lightSourcesService.lightSources$.pipe(map(sources => sources[0]))
-   // document.getElementById("spec").setStdDeviation(5, 5);
+    // document.getElementById("spec").setStdDeviation(5, 5);
   }
 }

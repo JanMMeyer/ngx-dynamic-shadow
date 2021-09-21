@@ -1,60 +1,55 @@
 
-import { Directive, DoCheck, ElementRef, KeyValueDiffers, OnChanges, OnInit } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { zip } from 'rxjs/operators';
+import { ElementRef, KeyValueDiffers, SimpleChanges } from '@angular/core';
+import { fromEvent, Observable, ReplaySubject, Subscription } from 'rxjs';
+
 import { DynamicShadow } from '../dynamicLight/dynamicShadow.class';
 import { LightSourcesService } from '../dynamicLight/lightSource.service';
 import { Position } from '../dynamicLight/position.class';
 import { IPosition } from '../dynamicLight/position.interface';
 
-export class DynamicShadowElement<T extends HTMLElement> extends DynamicShadow implements OnChanges, DoCheck, OnInit{
+export class DynamicShadowElement<T extends HTMLElement> {
 
-  private nativeElement: HTMLButtonElement 
-  private differs: KeyValueDiffers
+  private nativeElement: HTMLButtonElement
   private differ: any;
-  private zCoordinate: number
-  
-  constructor(el: ElementRef<HTMLButtonElement>, lightSourcesService: LightSourcesService, differs: KeyValueDiffers) {
+  private resize$ = fromEvent(window, 'resize')
+
+  private zCoordinate: number = 3
+  private position$: ReplaySubject<IPosition> = new ReplaySubject<IPosition>(1)
+
+  private resizeSubscripion: Subscription
+
+  public readonly boxShadow$: Observable<string>
+
+  constructor(el: ElementRef<HTMLButtonElement>, lightSourcesService: LightSourcesService, private differs: KeyValueDiffers) {
     // console.log('zindex ',el.nativeElement.style.zIndex);
     // const z: number = +el.nativeElement.style.zIndex
-    const z = 3
-    const initialSelfPosition: IPosition = Position.fromDOMRect(el.nativeElement.getBoundingClientRect(), z)
-    super(initialSelfPosition, lightSourcesService.lightSources$)
-    this.zCoordinate = z
-    this.differs = differs
+    this.nativeElement = el.nativeElement
+    this.differ = this.differs.find(this.position).create();
+    this.boxShadow$ = new DynamicShadow(this.position$, lightSourcesService.lightSources$).boxShadow$
+    this.resizeSubscripion = this.resize$.subscribe(() => { this.position$.next(this.position) })
   }
 
-
-  ngOnInit() {
-    this.differ = this.differs.find(this.customer).create(null);
+  protected get position(): IPosition {
+    // console.log(`zindex ${this.nativeElement.style.zIndex}`);
+    return Position.fromDOMRect(this.nativeElement.getBoundingClientRect(), this.zCoordinate)
   }
- 
-    ngDoCheck() {
-        console.log('Docheck');
-        this.DocheckCount++;
- 
-        const customerChanges = this.differ.diff(this.customer);
- 
-        if (customerChanges) {
-            console.log(customerChanges);
-            customerChanges.forEachChangedItem(r =>  this.changelog.push('changed ' + r.key + ' ' + JSON.stringify( r.currentValue)));
-            customerChanges.forEachAddedItem(r =>  this.changelog.push('added ' + r.key + ' ' + JSON.stringify( r.currentValue)));
-            customerChanges.forEachRemovedItem(r =>  this.changelog.push('removed ' + r.key + ' ' + JSON.stringify( r.currentValue)));
-        }
- 
-    }
- 
-    ngOnChanges(changes: SimpleChanges) {
-        console.log('OnChanges');
-        console.log(JSON.stringify(changes));
- 
-        // tslint:disable-next-line:forin
-        for (const propName in changes) {
-             const change = changes[propName];
-             const to  = JSON.stringify(change.currentValue);
-             const from = JSON.stringify(change.previousValue);
-             const changeLog = `${propName}: changed from ${from} to ${to} `;
-             this.changelog.push(changeLog);
-        }
-    }
+
+  protected _ngOnInit(): void {
+    this.position$.next(this.position)
+    this.differ.diff(this.position);
+
+  }
+
+  protected _ngDoCheck() {
+    this.differ.diff(this.position)
+  }
+
+  protected _ngOnChanges(changes: SimpleChanges) {
+    console.log(JSON.stringify(changes));
+    this.position$.next(this.position)
+  }
+
+  protected _ngOnDestroy(): void {
+    this.resizeSubscripion.unsubscribe()
+  }
 }

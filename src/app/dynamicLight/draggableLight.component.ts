@@ -1,11 +1,9 @@
-import {Component, ElementRef} from '@angular/core';
+import { CdkDragMove } from '@angular/cdk/drag-drop';
+import { Component, ElementRef } from '@angular/core';
+import { Observable } from 'rxjs';
 import { LightSourcesService } from '../dynamicLight/lightSource.service';
 import { Position } from '../dynamicLight/position.class';
 import { IPosition } from '../dynamicLight/position.interface';
-
-export interface DragMovedEvent {
-  pointerPosition: { x: number, y: number }
-}
 
 @Component({
   selector: 'draggableLight',
@@ -18,11 +16,23 @@ export interface DragMovedEvent {
             </div>
             <svg height="0"> <defs>
               <filter id="shinyFilter">
-                <feSpecularLighting id="spec" result="specOut"
-                    specularExponent="20" lighting-color="#bbbbbb">
-                  <fePointLight x="75" y="75" z="200"/>
-                </feSpecularLighting>
-                <feComposite in="SourceGraphic" in2="specOut"
+                <!-- <feSpecularLighting id="spec" result="lightOut"
+                    specularExponent="8" lighting-color="#bbbbbb">
+                  <fePointLight *ngFor="let lightSource of (lightSources$ | async)"
+                    [attr.x]="lightSource.x"
+                    [attr.y]="lightSource.y"
+                    [attr.z]="lightSource.z"/>
+                </feSpecularLighting> -->
+                <feDiffuseLighting  id="spec" result="lightOut"
+                    surfaceScale="1"
+                    diffuseConstant="3"
+                    lighting-color="#222">
+                  <fePointLight *ngFor="let lightSource of (lightSources$ | async)"
+                    [attr.x]="lightSource.x"
+                    [attr.y]="lightSource.y"
+                    [attr.z]="lightSource.z"/>
+                </feDiffuseLighting>
+                <feComposite in="SourceGraphic" in2="lightOut"
                     operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
               </filter>
             </defs> </svg>
@@ -44,25 +54,25 @@ export interface DragMovedEvent {
       left:0;
       filter:url(#shinyFilter);
       z-index: 1;
-    }`,
-    // `div {
-
-    // }`
+    }`
   ],
 })
 export class DraggableLight {
   private nativeElement: HTMLButtonElement
-  private z: number = 100
+  private z: number = 200
   private lightSourceIndex: number
-  
-  constructor(el: ElementRef<HTMLButtonElement>, private lightSourcesService: LightSourcesService) {
+
+  public lightSources$: Observable<IPosition[]>
+
+  constructor(el: ElementRef<HTMLButtonElement>, public lightSourcesService: LightSourcesService) {
     this.nativeElement = el.nativeElement
     const position: IPosition = Position.fromDOMRect(this.nativeElement.getBoundingClientRect(), this.z)
     this.lightSourceIndex = this.lightSourcesService.registerLightSource(position)
+    this.lightSources$ = this.lightSourcesService.lightSources$
   }
 
-  public handleDrag(event: DragMovedEvent) {
-    const position: IPosition = Position.fromDragMovedEvent(event, this.z)
+  public handleDrag(event: unknown) {
+    const position: IPosition = Position.fromDragMovedEvent(event as CdkDragMove<HTMLElement>, this.z)
     this.lightSourcesService.updateLightSource(this.lightSourceIndex, position)
   }
 }
