@@ -25,8 +25,8 @@ import { IPosition } from '../dynamicLight/position.interface';
                 </feSpecularLighting> -->
                 <feDiffuseLighting  id="spec" result="lightOut"
                     surfaceScale="1"
-                    diffuseConstant="3"
-                    lighting-color="#222">
+                    diffuseConstant="0.02"
+                    lighting-color="magenta">
                   <fePointLight *ngFor="let lightSource of (lightSources$ | async)"
                     [attr.x]="lightSource.x"
                     [attr.y]="lightSource.y"
